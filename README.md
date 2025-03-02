@@ -1,85 +1,82 @@
-# Monarch
+# MONARCH - Audio Recognition
 
-Monarch is a Next.js project built with TypeScript that aims to recreate a simplified, Shazam-like audio fingerprinting system. This project is designed as a learning tool for beginners who are just starting to code and want to explore audio processing and web development in a modern framework.
+MONARCH is a modern audio recognition application that allows users to identify songs by listening to audio from their microphone or device. It uses audio fingerprinting technology to match audio samples against a database of songs.
 
-## Overview
+## Features
 
-Monarch leverages the power of modern web technologies to process audio files and perform audio recognition. At a high level, the project works by:
-
-1. **Audio Preprocessing:**  
-   - Load an audio file and decode it into raw audio data.
-   - Normalize the audio and, if necessary, convert it to a single (mono) channel.
-
-2. **Spectrogram Generation:**  
-   - Transform the raw audio data into a time-frequency representation using techniques like the Short-Time Fourier Transform (STFT).
-   - This step creates a spectrogram that shows how the audio's frequency content changes over time.
-
-3. **Peak Detection:**  
-   - Analyze the spectrogram to identify prominent peaks that represent key audio features.
-   - These peaks serve as the building blocks for creating a unique audio fingerprint.
-
-4. **Fingerprint Creation:**  
-   - Pair detected peaks from the spectrogram to generate compact hash fingerprints.
-   - These fingerprints uniquely represent segments of the audio file and can be used for matching.
-
-5. **Indexing & Matching:**  
-   - Organize the fingerprints into a searchable index.
-   - When a new (query) audio sample is processed, its fingerprints are compared against the stored ones to find a match based on timing and frequency patterns.
-
-6. **User Interface & Interaction:**  
-   - Provide a clean, interactive web interface using Next.js.
-   - Allow users to upload audio files, view visualizations (like spectrograms), and see matching results.
+- **Audio Recognition**: Identify songs by listening to audio from your microphone or device
+- **Spotify Integration**: Download songs, albums, and playlists from Spotify
+- **Real-time Matching**: Get instant results as you listen
+- **YouTube Links**: Access matched songs on YouTube
+- **Responsive Design**: Works on both desktop and mobile devices
 
 ## Technology Stack
 
-- **Next.js:** For server-side rendering and building a responsive, modern web interface.
-- **TypeScript:** To ensure strong typing and maintainable, scalable code.
-- **Web Audio API / Audio Libraries:** For decoding audio files and performing audio analysis.
-- **Modern Frontend Tools:** For state management, responsive design, and API integration.
-
-## How It Works (General Steps)
-
-- **Step 1: Audio Input & Preprocessing**  
-  The application accepts an audio file, decodes it to extract raw audio samples, and prepares the data by normalizing and converting it to mono if needed.
-
-- **Step 2: Creating a Spectrogram**  
-  The raw audio data is segmented into overlapping windows. Each segment is processed using a Fourier transform (after applying a window function) to create a spectrogram that shows the frequency content over time.
-
-- **Step 3: Detecting Peaks**  
-  The spectrogram is analyzed to locate the most prominent peaks in each time segment. These peaks are considered the distinctive features of the audio.
-
-- **Step 4: Generating Fingerprints**  
-  The system pairs nearby peaks to create hash fingerprints that capture the unique characteristics of the audio. These fingerprints form the basis for identifying and matching audio samples.
-
-- **Step 5: Indexing & Matching**  
-  Generated fingerprints are stored in an index. When a new audio sample is provided, its fingerprints are compared against the index. A matching algorithm votes on time offsets to determine if there is a strong match with existing data.
-
-- **Step 6: User Feedback**  
-  The web interface displays the results of the audio matching process, including visual representations of the spectrogram and detected features, along with the best match (if found).
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Backend**: Node.js, Socket.IO
+- **Database**: MongoDB
+- **Audio Processing**: Web Audio API, MediaRecorder API
+- **Fingerprinting**: Custom audio fingerprinting algorithm
 
 ## Getting Started
 
-1. **Clone the Repository:**  
-   Begin by cloning the Monarch repository to your local machine.
+### Prerequisites
 
-2. **Install Dependencies:**  
-   Use npm or yarn to install all required packages.
+- Node.js (v14 or higher)
+- MongoDB
+- Spotify API credentials
 
-3. **Run the Development Server:**  
-   Start the Next.js development server to view and interact with the project.
+### Installation
 
-4. **Explore and Experiment:**  
-   Since you're just starting out, feel free to modify and experiment with the code. Monarch is structured to help you learn the basic concepts of audio processing and modern web development.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/monarch.git
+   cd monarch
+   ```
 
-## Future Plans
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-- Enhance audio processing and fingerprint matching for improved accuracy.
-- Integrate support for multiple audio formats.
-- Expand the user interface to include detailed visualizations and more interactive features.
-- Optimize performance using advanced techniques like WebAssembly for compute-intensive tasks.
+3. Create a `.env.local` file in the root directory with the following variables:
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   SPOTIFY_CLIENT_ID=your_spotify_client_id
+   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+   ```
 
----
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-Monarch is your starting point for exploring audio fingerprinting with Next.js and TypeScript. Enjoy coding and learning as you build out this exciting project!
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Happy coding!
+## Usage
+
+1. **Identify a Song**: Click the "Listen" button and allow microphone access or screen audio sharing.
+2. **Add Songs to Database**: Enter a Spotify URL (track, album, or playlist) in the input field and click "Download".
+3. **View Matches**: Matched songs will appear in the carousel with their title, artist, and match score.
+
+## How It Works
+
+MONARCH uses a custom audio fingerprinting algorithm to identify songs:
+
+1. Audio is captured from the microphone or device
+2. The audio is processed to generate a spectrogram
+3. Peak points in the spectrogram are identified
+4. Fingerprints are generated from these peak points
+5. The fingerprints are matched against the database
+6. The best matches are returned to the user
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- Inspired by the Shazam audio recognition algorithm
+- Built with Next.js and React
+- Styled with Tailwind CSS
+
