@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsc -p tsconfig.server.json && node server.js",
-    "build": "next build && tsc -p tsconfig.server.json",
+    "clean": "rm -rf dist .next",
+    "dev": "npm run clean && tsc -p tsconfig.server.json && node server.js",
+    "build": "npm run clean && next build && tsc -p tsconfig.server.json",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },

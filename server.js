@@ -3,8 +3,8 @@ const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
 const path = require('path');
-// Import the socket handlers
-const { initSocketHandlers } = require('./src/lib/socket.js');
+// Import the socket handlers from the compiled TypeScript
+const { initSocketHandlers } = require('./dist/lib/socket');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -52,7 +52,8 @@ app.prepare().then(() => {
     transports: ['websocket', 'polling'],
     allowEIO3: true,
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    connectTimeout: 45000
   });
 
   // Handle server errors
