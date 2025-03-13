@@ -12,17 +12,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Only handle polling requests, not WebSocket
-  if (request.nextUrl.pathname.startsWith('/api/socket/io') && 
-      !request.nextUrl.pathname.includes('websocket')) {
-    // For polling requests, rewrite to our socket handler
-    return NextResponse.rewrite(new URL('/api/socket', request.url));
-  }
-
+  // For all other requests, proceed normally
   return NextResponse.next();
 }
 
 // Configure the middleware to run only for socket.io paths
 export const config = {
-  matcher: ['/api/socket/io/:path*'],
+  matcher: ['/api/socket/io/:path*']
 }; 

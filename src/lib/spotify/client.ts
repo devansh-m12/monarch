@@ -1,12 +1,14 @@
 import axios from 'axios';
 import { Track } from '../../types';
-import { createFolder, getEnv } from '../utils/helpers';
+import { createFolder, getEnv, generateSongKey, getLogger } from '../utils/helpers';
 import path from 'path';
 import fs from 'fs';
 import { fingerprintAudio } from '../shazam/fingerprint';
 import DBClient from '../db/client';
 import { readWavInfo, wavBytesToSamples } from '../wav/processor';
 import { hasObjectId } from '../utils/typeGuards';
+
+const logger = getLogger();
 
 // Spotify API endpoints
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
@@ -22,6 +24,7 @@ const SPOTIFY_CLIENT_SECRET = getEnv('SPOTIFY_CLIENT_SECRET', '');
  */
 const getSpotifyToken = async (): Promise<string> => {
   try {
+    logger.info('Requesting Spotify access token');
     const response = await axios({
       method: 'post',
       url: SPOTIFY_TOKEN_URL,
@@ -34,9 +37,10 @@ const getSpotifyToken = async (): Promise<string> => {
       }
     });
     
+    logger.info('Successfully obtained Spotify token');
     return response.data.access_token;
   } catch (error) {
-    console.error('Error getting Spotify token:', error);
+    logger.error('Error getting Spotify token:', error);
     throw new Error('Failed to get Spotify access token');
   }
 };
@@ -182,11 +186,12 @@ export const playlistInfo = async (playlistUrl: string): Promise<Track[]> => {
  */
 export const getYoutubeId = async (track: Track): Promise<string> => {
   try {
-    // In a real implementation, you would use the YouTube API to search for the track
-    // For now, we'll return a dummy YouTube ID
-    return `youtube-${track.title}-${track.artist}`.replace(/\s+/g, '-').toLowerCase();
+    // For now, return a dummy YouTube ID
+    const dummyId = `youtube-${track.title}-${track.artist}`.replace(/\s+/g, '-').toLowerCase();
+    logger.info(`Generated dummy YouTube ID: ${dummyId}`);
+    return dummyId;
   } catch (error) {
-    console.error('Error getting YouTube ID:', error);
+    logger.error('Error generating YouTube ID:', error);
     throw new Error('Failed to get YouTube ID for track');
   }
 };
@@ -390,4 +395,88 @@ export const processAndSaveSong = async (
     console.error('Error processing and saving song:', error);
     throw new Error('Failed to process and save song');
   }
-}; 
+};
+
+/**
+ * Downloads a song from Spotify
+ * @param url Spotify URL (track, album, or playlist)
+ * @returns Song data
+ */
+export async function downloadSong(url: string) {
+  try {
+    logger.info(`Starting download for Spotify URL: ${url}`);
+    
+    const spotifyId = extractSpotifyId(url);
+    if (!spotifyId) {
+      logger.error(`Invalid Spotify URL: ${url}`);
+      throw new Error('Invalid Spotify URL');
+    }
+    
+    logger.info(`Getting Spotify token for track ID: ${spotifyId}`);
+    const token = await getSpotifyToken();
+    
+    logger.info(`Fetching track info for ID: ${spotifyId}`);
+    const track = await getTrackInfo(spotifyId, token);
+    
+    if (!track.artists || track.artists.length === 0) {
+      logger.error('Track data missing artists array');
+      throw new Error('Invalid track data: missing artists');
+    }
+
+    logger.info(`Creating song data for: ${track.name} by ${track.artists[0].name}`);
+    const songData = {
+      title: track.name,
+      artist: track.artists[0].name,
+      album: track.album?.name,
+      duration: Math.round(track.duration_ms / 1000),
+      youtubeId: await getYoutubeId({ 
+        name: track.name, 
+        artists: track.artists 
+      }),
+      songKey: generateSongKey(track.name, track.artists[0].name),
+      createdAt: new Date()
+    };
+
+    logger.info(`Successfully processed song: ${songData.title}`);
+    return songData;
+  } catch (error) {
+    logger.error('Error downloading song:', error);
+    throw new Error('Failed to download song');
+  }
+}
+
+/**
+ * Extracts Spotify ID from URL
+ * @param url Spotify URL
+ * @returns Spotify ID
+ */
+const extractSpotifyId = (url: string): string | null => {
+  const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+};
+
+/**
+ * Gets track info from Spotify API
+ * @param id Spotify track ID
+ * @param token Access token
+ * @returns Track info
+ */
+const getTrackInfo = async (id: string, token: string): Promise<Track> => {
+  try {
+    logger.info(`Fetching track info from Spotify API for ID: ${id}`);
+    const response = await axios.get(`${SPOTIFY_API_BASE}/tracks/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const track = response.data;
+    logger.info(`Successfully fetched track info: ${track.name}`);
+    return track;
+  } catch (error) {
+    logger.error('Error fetching track info from Spotify:', error);
+    throw new Error('Failed to get track information from Spotify');
+  }
+};
+
+// ... rest of the existing code ... 

@@ -3,7 +3,7 @@
 // You'll need to adapt this to your actual project structure
 
 import { Server, Socket } from 'socket.io';
-import { RecordData, StatusMessage, Match } from '../types';
+import { RecordData, StatusMessage, Match } from '@/types';
 
 /**
  * Initialize Socket.io event handlers

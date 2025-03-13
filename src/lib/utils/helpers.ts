@@ -43,7 +43,7 @@ export const getEnv = (key: string, defaultValue: string): string => {
  */
 export const processRecording = async (recordData: RecordData, saveToFile: boolean = false): Promise<Float32Array> => {
   // Convert base64 audio to buffer
-  const audioBuffer = Buffer.from(recordData.audio, 'base64');
+  const audioBuffer = Buffer.from(recordData.audioData, 'base64');
   
   // If saveToFile is true, save the buffer to a file
   if (saveToFile) {
@@ -63,11 +63,28 @@ export const processRecording = async (recordData: RecordData, saveToFile: boole
  * @returns Logger instance
  */
 export const getLogger = () => {
+  const formatError = (error: unknown): Error => {
+    if (error instanceof Error) return error;
+    return new Error(String(error));
+  };
+
   return {
     info: (message: string) => console.log(`[INFO] ${message}`),
-    error: (message: string, error?: Error) => console.error(`[ERROR] ${message}`, error),
+    error: (message: string, error?: unknown) => {
+      if (error) {
+        console.error(`[ERROR] ${message}`, formatError(error));
+      } else {
+        console.error(`[ERROR] ${message}`);
+      }
+    },
     warn: (message: string) => console.warn(`[WARN] ${message}`),
     debug: (message: string) => console.debug(`[DEBUG] ${message}`),
-    errorContext: (ctx: unknown, message: string, error?: unknown) => console.error(`[ERROR] ${message}`, error)
+    errorContext: (ctx: unknown, message: string, error?: unknown) => {
+      if (error) {
+        console.error(`[ERROR] ${message}`, ctx, formatError(error));
+      } else {
+        console.error(`[ERROR] ${message}`, ctx);
+      }
+    }
   };
 }; 

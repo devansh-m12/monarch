@@ -1,110 +1,77 @@
 import React, { useState } from 'react';
-import { Socket } from 'socket.io-client';
-import { ToastContent, ToastOptions, Id } from 'react-toastify';
+import { toast } from 'react-toastify';
 
 interface FormProps {
-  socket: Socket;
-  toast: (content: ToastContent, options?: ToastOptions) => Id;
+  onSongAdded: (totalSongs: number) => void;
 }
 
-const Form: React.FC<FormProps> = ({ socket, toast }) => {
-  const [spotifyURL, setSpotifyURL] = useState('');
+export default function Form({ onSongAdded }: FormProps) {
+  const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!spotifyURL) {
-      toast('Please enter a Spotify URL');
+    if (!url) {
+      toast.error('Please enter a Spotify URL');
       return;
     }
-    
-    if (!spotifyURL.includes('spotify.com')) {
-      toast('Please enter a valid Spotify URL');
+
+    if (!url.includes('spotify.com')) {
+      toast.error('Please enter a valid Spotify URL');
       return;
     }
-    
+
     setIsLoading(true);
-    socket.emit('newDownload', spotifyURL);
-    
-    // Reset the form after 1 second
-    setTimeout(() => {
-      setSpotifyURL('');
+    toast.info('Adding song...');
+
+    try {
+      const response = await fetch('/api/songs/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add song');
+      }
+
+      onSongAdded(data.totalSongs);
+      toast.success(`Successfully added "${data.song.title}" by ${data.song.artist}`);
+      setUrl('');
+    } catch (error) {
+      console.error('Error adding song:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to add song');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
-    <div className="form-container">
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Spotify URL (track, album, or playlist)"
-            value={spotifyURL}
-            onChange={(e) => setSpotifyURL(e.target.value)}
-            disabled={isLoading}
-            className="spotify-input"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="submit-button"
-          >
-            {isLoading ? 'Loading...' : 'Download'}
-          </button>
-        </div>
-      </form>
-      <style jsx>{`
-        .form-container {
-          margin-top: 2rem;
-          width: 100%;
-          max-width: 600px;
-          padding: 0 1rem;
-        }
-        
-        .form-group {
-          display: flex;
-          gap: 0.5rem;
-          width: 100%;
-        }
-        
-        .spotify-input {
-          flex: 1;
-          padding: 0.75rem;
-          border: 1px solid #e2e8f0;
-          border-radius: 0.375rem;
-          font-size: 1rem;
-          outline: none;
-          transition: border-color 0.2s ease-in-out;
-        }
-        
-        .spotify-input:focus {
-          border-color: #3b82f6;
-        }
-        
-        .submit-button {
-          padding: 0.75rem 1.5rem;
-          background-color: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 0.375rem;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background-color 0.2s ease-in-out;
-        }
-        
-        .submit-button:hover:not(:disabled) {
-          background-color: #2563eb;
-        }
-        
-        .submit-button:disabled {
-          background-color: #93c5fd;
-          cursor: not-allowed;
-        }
-      `}</style>
-    </div>
+    <form onSubmit={handleSubmit} className="w-full max-w-md">
+      <div className="flex items-center border-b border-teal-500 py-2">
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter Spotify URL"
+          className="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          className={`flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Adding...' : 'Add Song'}
+        </button>
+      </div>
+    </form>
   );
-};
-
-export default Form; 
+} 

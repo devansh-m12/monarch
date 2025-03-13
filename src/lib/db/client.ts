@@ -1,17 +1,59 @@
 import { Song, Fingerprint, ISong, IFingerprint } from '../../models';
-import dbConnect from './mongodb';
-import { generateSongKey } from '../utils/helpers';
 import mongoose from 'mongoose';
+import { getEnv, generateSongKey } from '../utils/helpers';
+
+const MONGODB_URI = getEnv('MONGODB_URI', '');
+
+interface SongData {
+  title: string;
+  artist: string;
+  album?: string;
+  duration: number;
+  youtubeId?: string;
+  songKey: string;
+  createdAt: Date;
+}
 
 class DBClient {
-  constructor() {
-    // Connect to the database
-    dbConnect();
+  private static instance: DBClient | null = null;
+  private isConnected: boolean = false;
+
+  private constructor() {}
+
+  static getInstance(): DBClient {
+    if (!DBClient.instance) {
+      DBClient.instance = new DBClient();
+    }
+    return DBClient.instance;
   }
 
-  async close() {
-    // This is a no-op in Next.js since we're using a cached connection
-    return;
+  async connect() {
+    if (!this.isConnected) {
+      await mongoose.connect(MONGODB_URI);
+      this.isConnected = true;
+    }
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
+    return db;
+  }
+
+  async disconnect() {
+    if (this.isConnected) {
+      await mongoose.disconnect();
+      this.isConnected = false;
+    }
+  }
+
+  async insertSong(songData: SongData) {
+    const db = await this.connect();
+    return await db.collection('songs').insertOne(songData);
+  }
+
+  async countSongs() {
+    const db = await this.connect();
+    return await db.collection('songs').countDocuments();
   }
 
   async saveSong(title: string, artist: string, album: string | undefined, duration: number, youtubeId: string | undefined): Promise<ISong> {
@@ -69,4 +111,6 @@ class DBClient {
   }
 }
 
-export default DBClient; 
+// Export a singleton instance
+const instance = DBClient.getInstance();
+export default instance; 

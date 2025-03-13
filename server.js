@@ -46,14 +46,20 @@ app.prepare().then(() => {
     addTrailingSlash: false,
     cors: {
       origin: '*',
-      methods: ['GET', 'POST']
+      methods: ['GET', 'POST'],
+      credentials: true
     },
-    // Add these options to fix the WebSocket connection issues
-    transports: ['websocket', 'polling'],
-    allowEIO3: true,
+    transports: ['websocket'],
     pingTimeout: 60000,
     pingInterval: 25000,
-    connectTimeout: 45000
+    connectTimeout: 45000,
+    allowEIO3: true,
+    maxHttpBufferSize: 1e8 // 100 MB
+  });
+
+  // Add error handling for the io server
+  io.engine.on('connection_error', (err) => {
+    console.error('Socket.io connection error:', err);
   });
 
   // Handle server errors
